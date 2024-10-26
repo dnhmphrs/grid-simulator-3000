@@ -11,9 +11,8 @@
     pipeline = await createRenderPipeline(device);
 
     if (device && context) {
-      // Run resizeCanvas after the component has fully mounted
-      resizeCanvas();
-      renderLoop();
+      resizeCanvas(); // Initial resize
+      renderLoop();   // Start the render loop
     }
 
     window.addEventListener('resize', resizeCanvas);
@@ -24,18 +23,15 @@
   });
 
   function resizeCanvas() {
-    if (!canvas) return; // Check if canvas is defined
     const devicePixelRatio = window.devicePixelRatio || 1;
     canvas.width = Math.floor(canvas.clientWidth * devicePixelRatio);
     canvas.height = Math.floor(canvas.clientHeight * devicePixelRatio);
 
-    // Update viewport size uniform in RenderPipeline
+    // Pass viewport size to GPU
     updateViewportSize(device, canvas.width, canvas.height);
   }
 
   function renderLoop() {
-    if (!device || !context || !pipeline) return; // Check if initialized
-
     const commandEncoder = device.createCommandEncoder();
     const textureView = context.getCurrentTexture().createView();
 
@@ -56,9 +52,6 @@
     passEncoder.end();
 
     device.queue.submit([commandEncoder.finish()]);
-
-    // Call resizeCanvas in each loop to ensure it's updated
-    resizeCanvas();
     requestAnimationFrame(renderLoop);
   }
 </script>
