@@ -15,7 +15,7 @@ fn fragment_main(@builtin(position) fragCoord: vec4<f32>) -> @location(0) vec4<f
   // Assume a viewport size, e.g., 800x600. Adjust if you know the actual dimensions.
   let viewportSize = vec2<f32>(800.0, 600.0); 
   
-  // Normalize screen coordinates to range [0.0, 1.0]
+  // Normalize screen coordinates to clip space [0.0, 1.0]
   let normalizedCoord = fragCoord.xy / viewportSize;
 
   // Calculate color based on screen position

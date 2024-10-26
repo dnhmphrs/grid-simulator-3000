@@ -2,17 +2,35 @@
   import { onMount } from 'svelte';
   import { initializeWebGPU } from './webgpu/WebGPUContext.js';
   import { createRenderPipeline, updateViewportSize } from './webgpu/RenderPipeline.js';
+  import { createComputePipeline, initializeComputeBuffers, readBuffer, runComputePass } from './webgpu/ComputePipeline.js';
 
   let canvas;
-  let device, context, pipeline;
+  let device, context, pipeline, computePipeline;
 
   onMount(async () => {
     ({ device, context } = await initializeWebGPU(canvas));
-    pipeline = await createRenderPipeline(device);
 
-    if (device && context) {
-      resizeCanvas(); // Initial resize
-      renderLoop();   // Start the render loop
+    // Initialize compute buffers
+    initializeComputeBuffers(device);
+
+    pipeline = await createRenderPipeline(device);
+    computePipeline = await createComputePipeline(device);
+
+    if (device && context && computePipeline) {
+      resizeCanvas();
+      await runComputePass(device, computePipeline); // Run compute pass before rendering
+      await device.queue.onSubmittedWorkDone();
+
+      // Map readBuffer for reading back data
+      {
+        await readBuffer.mapAsync(GPUMapMode.READ);
+        const mappedData = new Float32Array(readBuffer.getMappedRange());
+
+        console.log("Computed data:", mappedData.slice(0, 10));
+        readBuffer.unmap();
+      }
+
+      render();
     }
 
     window.addEventListener('resize', resizeCanvas);
@@ -23,15 +41,17 @@
   });
 
   function resizeCanvas() {
+    if (!canvas) return;
     const devicePixelRatio = window.devicePixelRatio || 1;
     canvas.width = Math.floor(canvas.clientWidth * devicePixelRatio);
     canvas.height = Math.floor(canvas.clientHeight * devicePixelRatio);
 
-    // Pass viewport size to GPU
     updateViewportSize(device, canvas.width, canvas.height);
   }
 
-  function renderLoop() {
+  function render() {
+    if (!device || !context || !pipeline) return;
+
     const commandEncoder = device.createCommandEncoder();
     const textureView = context.getCurrentTexture().createView();
 
@@ -48,11 +68,11 @@
 
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
     passEncoder.setPipeline(pipeline);
-    passEncoder.draw(3, 1, 0, 0); // Draw a single triangle covering the screen
+    passEncoder.draw(3, 1, 0, 0);
     passEncoder.end();
 
     device.queue.submit([commandEncoder.finish()]);
-    requestAnimationFrame(renderLoop);
+    requestAnimationFrame(render);
   }
 </script>
 
