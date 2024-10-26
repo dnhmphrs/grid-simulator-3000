@@ -31,7 +31,8 @@
 
 	onMount(async () => {
 		// webgl
-		const module = await import('$lib/graphics/webgl.svelte');
+		// const module = await import('$lib/graphics-webgl/webgl.svelte');
+		const module = await import('$lib/graphics-webgpu/webgpu.svelte');
 		Geometry = module.default;
 
 		handleScreen();
@@ -50,7 +51,7 @@
 	<meta name="author" content="AUFBAU" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-	<link rel="preload" href="/aufbau.svg" as="image" type="image/svg+xml" crossorigin="anonymous" />
+	<!-- <link rel="preload" href="/aufbau.svg" as="image" type="image/svg+xml" crossorigin="anonymous" /> -->
 
 	<!-- <link
 		rel="preload"
